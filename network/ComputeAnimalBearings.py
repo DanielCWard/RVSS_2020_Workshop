@@ -136,7 +136,8 @@ class PosedImage:
         # Try and think of better solutions than just averaging.
 
         for animal in bearings:
-            bearing_dict = {"pose":self.pose.tolist(),
+            bearing_dict = {"image_name":self.img_name,
+                            "pose":self.pose.tolist(),
                             "animal":animal,
                             "bearing":bearings[animal]}
             bearing_line = json.dumps(bearing_dict)
