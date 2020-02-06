@@ -29,11 +29,33 @@ class Train:
         self.eval_data = datasets.ImageFolder('./nn_dataset/eval',
                                               transform=img_transforms)
 
+    def make_weights_for_balanced_classes(self, images, nclasses):                        
+        count = [0] * nclasses                                                      
+        for item in images:                                                         
+            count[item[1]] += 1                                                     
+        weight_per_class = [0.] * nclasses                                      
+        N = float(sum(count))                                                   
+        for i in range(nclasses):                                                   
+            weight_per_class[i] = N/float(count[i])                                 
+        weight = [0] * len(images)                                              
+        for idx, val in enumerate(images):                                          
+            weight[idx] = weight_per_class[val[1]]                                  
+        return weight                                                               
+
     def train(self):
-        train_loader = DataLoader(dataset=self.train_data,
-                                  batch_size=self.net_dict.batch_size,
-                                  shuffle=True, num_workers=4,
-                                  drop_last=True)
+        # dataset_train = DataLoader(dataset=self.train_data,
+        #                           batch_size=self.net_dict.batch_size,
+        #                           shuffle=True, num_workers=4,
+        #                           drop_last=True)
+
+        # Create weighted data sampler:
+        weights = self.make_weights_for_balanced_classes(self.train_data.imgs, len(self.train_data.classes))                                                                
+        weights = torch.DoubleTensor(weights)                                       
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))                     
+                                                                                        
+        train_loader = torch.utils.data.DataLoader(self.train_data, batch_size=self.net_dict.batch_size,
+                                                                    sampler = sampler, num_workers=4, pin_memory=True)     
+
         n_batch = len(train_loader)
         for epoch_idx in range(self.net_dict.last_epoch + 1,
                                self.net_dict.n_epochs):
