@@ -58,6 +58,7 @@ class Operate:
         return camera_matrix, dist_coeffs, scale, baseline
 
     def control(self):
+        self.keyboard.send_drive_signal() # bug fix
         lv, rv = self.keyboard.latest_drive_signal()
         if not self.data is None:
             self.data.write_keyboard(lv, rv)
