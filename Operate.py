@@ -16,7 +16,7 @@ import slam.aruco_detector as aruco
 import slam.Measurements as Measurements
 
 class Operate:
-    def __init__(self, datadir, ppi, writeData=False):
+    def __init__(self, datadir, ppi, writeData=True):
         # Initialise data parameters
         self.ppi = ppi
         self.ppi.set_velocity(0,0)
@@ -59,6 +59,7 @@ class Operate:
 
     def control(self):
         lv, rv = self.keyboard.latest_drive_signal()
+        self.keyboard.send_drive_signal()
         if not self.data is None:
             self.data.write_keyboard(lv, rv)
         drive_meas = Measurements.DriveMeasurement(lv, rv, dt=0.3)
@@ -111,14 +112,14 @@ class Operate:
        
 if __name__ == "__main__":   
     currentDir = os.getcwd()
-    datadir = "{}/testData/testCalibration/".format(currentDir)
+    datadir = "{}/testData/".format(currentDir)
     
     # Use either a real or simulated penguinpi
     ppi = integration.penguinPiC.PenguinPi(ip = '192.168.50.1')
     # ppi = dh.DatasetPlayer("test")
 
     # Set up the integrated system
-    operate = Operate(datadir, ppi, writeData=False)
+    operate = Operate(datadir, ppi, writeData=True)
 
     # Enter the main loop
     operate.process()
