@@ -174,4 +174,6 @@ if __name__ == '__main__':
     # heat_map = exp.sliding_window(img)
     img = Image.open(sys.argv[1])
     heat_map = exp.sliding_window(img)
+    # plt.imshow(heat_map)
+    # plt.show()
     exp.visualise_heatmap(heat_map, img, overlay=True)

@@ -5,6 +5,10 @@ import numpy as np
 from sklearn.cluster import MeanShift, estimate_bandwidth
 import math
 import os
+import matplotlib.pyplot as plt
+
+import cv2
+
 class PosedImage:
     def __init__(self, json_line):
         img_dict = json.loads(json_line)
@@ -17,11 +21,38 @@ class PosedImage:
         img = Image.open(folder_name+self.img_name)
         heatmap = neuralnet.sliding_window(img)
 
+        print("Inferences for", folder_name+self.img_name)
+        # plt.imshow(heatmap)
+        # plt.show()
+
+        #######################
+
+
+        # print("shape", img.size, heatmap.shape)
+
+        # detections = np.unique(heatmap)
+        # print("detections", detections)
+
+        # # Assumptions
+        # #   - Only ever 1 animal in the image at a time
+        # #   - animal wont be in the top 50 lines
+
+        # heatmap[:int(img.size[0] * 0.15), :] = 1
+
+        # # 0, 1, 2, 3 is bg, elephant, llama, snake
+
+        # ax, ar = plt.subplots(2)
+        # ar[0].imshow(heatmap)
+        # ar[1].imshow(img)
+        # plt.show()
+
+        #######################
+
         #neuralnet.visualise_heatmap(heatmap, img, overlay=True)
-        _, counts = np.unique(heatmap, return_counts = 1)
+        uniques, counts = np.unique(heatmap, return_counts = 1)
         counts[0] = 0
-        print(counts)
-        Predictedlabel = np.argmax(counts)
+        print('counts', counts, uniques)
+        Predictedlabel = uniques[np.argmax(counts)]
 
         #Filter only largest label
         heatmapFilter1 = np.where(heatmap!=Predictedlabel, 0, heatmap)
@@ -31,7 +62,20 @@ class PosedImage:
         coorLabel = np.where(heatmapFilter1 == Predictedlabel)
         coorLabel = np.column_stack([coorLabel[0], coorLabel[1]])
 
+        # ax, ar = plt.subplots(3)
+        # ar[0].imshow(img)
+        # ar[1].imshow(heatmap)
+        # ar[2].imshow(heatmapFilter1)
+        # plt.show()
+
+        print("Predicted Label:", Predictedlabel, coorLabel.shape)
+        print("coor Label:", coorLabel)
         bandwidth = estimate_bandwidth(coorLabel, quantile=.2)
+
+        # Adjust for when we have a single blob
+        if bandwidth == 0: bandwidth += 0.2
+
+
         clustering = MeanShift(bandwidth=bandwidth).fit(coorLabel)
         _, counts = np.unique(clustering.labels_, return_counts = 1)
         PredictedArea = np.argmax(counts)
@@ -56,7 +100,27 @@ class PosedImage:
         delta_x = np.abs(realCoorX - img.size[0]/2)
 
         bearing = math.atan2(delta_x, fx)
-        print(bearing)
+
+
+        print("bearing:", bearing)
+        if Predictedlabel == 1:
+            print('Elephant')
+        if Predictedlabel == 2:
+            print('llama')
+        if Predictedlabel == 3:
+            print('snake')
+        if Predictedlabel == 4:
+            print('crocodile')
+
+        # visImage = cv2.resize(np.array(img), heatmapFilter3.shape)
+        # ax, ar = plt.subplots(3)
+        # ar[0].imshow(img)
+        # ar[1].imshow(heatmap)
+        # # ar[1].imshow(visImage, alpha=0.5)
+        # ar[2].imshow(heatmapFilter3)
+        # # ar[2].imshow(visImage, alpha=0.5)
+        
+        # plt.show()
 
         # Compute animal bearings here and save to self.animals.
         # Next, you can use all this information to triangulate the animals!
@@ -68,6 +132,8 @@ class PosedImage:
             bearings["llama"] = bearing
         if Predictedlabel == 3:
             bearings["snake"] = bearing
+        if Predictedlabel == 4:
+            bearings["crocodile"] = bearing
         # For example, finding the llamas:
         # if np.any(heatmap == 2.0):
         #     llama_coords = np.where(heatmap == 2.0)
